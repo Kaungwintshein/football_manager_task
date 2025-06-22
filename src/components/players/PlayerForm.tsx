@@ -8,7 +8,7 @@ import {
   Player,
   CustomPlayer,
 } from "@/lib/slices/playersSlice";
-import { X, Save, UserPlus } from "lucide-react";
+import { X, UserPlus } from "lucide-react";
 import { z } from "zod";
 
 const createPlayerSchema = (existingNames: string[]) =>
@@ -148,9 +148,12 @@ export default function PlayerForm({
         weight: "",
         birth_date: "",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error creating player:", error);
-      setErrors({ first_name: error.message });
+      setErrors({
+        first_name:
+          error instanceof Error ? error.message : "An error occurred",
+      });
     } finally {
       setIsSubmitting(false);
     }

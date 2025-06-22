@@ -7,7 +7,6 @@ import {
   AnyPlayer,
   Team,
   APITeam,
-  Player,
   fetchTeamPlayers,
 } from "@/lib/slices/teamsSlice";
 import { createOffer } from "@/lib/slices/offersSlice";

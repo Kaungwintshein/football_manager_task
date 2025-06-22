@@ -1,7 +1,7 @@
 "use client";
 
-import { APITeam, LocalTeam, Player } from "@/lib/slices/teamsSlice";
-import { Edit, Trash2, Users, Plus, RefreshCw } from "lucide-react";
+import { APITeam, LocalTeam, Player, AnyPlayer } from "@/lib/slices/teamsSlice";
+import { Edit, Trash2, Users, Plus } from "lucide-react";
 
 type Team = APITeam | LocalTeam;
 
@@ -11,7 +11,6 @@ interface TeamCardProps {
   onDelete?: (team: Team) => void;
   onViewPlayers: (teamId: string | number) => void;
   onAddPlayers?: (teamId: string | number) => void;
-  onRestore?: (teamId: number) => void;
 }
 
 export default function TeamCard({
@@ -20,7 +19,6 @@ export default function TeamCard({
   onDelete,
   onViewPlayers,
   onAddPlayers,
-  onRestore,
 }: TeamCardProps) {
   const isLocalTeam = "isLocal" in team;
   const hasPlayers = isLocalTeam && team.players.length > 0;
@@ -119,11 +117,20 @@ export default function TeamCard({
             Team Players:
           </h4>
           <div className="space-y-1">
-            {team.players.slice(0, 3).map((player: Player) => (
-              <p key={player.id} className="text-xs text-gray-600">
-                {player.first_name} {player.last_name} ({player.position})
-              </p>
-            ))}
+            {(team.players as AnyPlayer[]).slice(0, 3).map((player, idx) => {
+              if (
+                "first_name" in player &&
+                "last_name" in player &&
+                "position" in player
+              ) {
+                return (
+                  <p key={player.id} className="text-xs text-gray-600">
+                    {player.first_name} {player.last_name} ({player.position})
+                  </p>
+                );
+              }
+              return null;
+            })}
             {team.players.length > 3 && (
               <p className="text-xs text-gray-500">
                 +{team.players.length - 3} more players

@@ -1,8 +1,7 @@
 "use client";
 
-import { useAppSelector } from "@/lib/hooks";
-import { TransferRecord, Team } from "@/lib/slices/teamsSlice";
-import { Calendar, User, Repeat } from "lucide-react";
+import { Team } from "@/lib/slices/teamsSlice";
+import { Calendar, Repeat } from "lucide-react";
 
 interface TransferHistoryProps {
   teamId: string | number;

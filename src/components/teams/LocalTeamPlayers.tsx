@@ -1,9 +1,7 @@
 "use client";
 
-import { useAppDispatch } from "@/lib/hooks";
-import { removePlayerFromTeam } from "@/lib/slices/teamsSlice";
 import { LocalTeam, AnyPlayer, Player } from "@/lib/slices/teamsSlice";
-import { Users, Minus } from "lucide-react";
+import { Users } from "lucide-react";
 import PlayerCard from "../players/PlayerCard";
 
 interface LocalTeamPlayersProps {
@@ -11,12 +9,6 @@ interface LocalTeamPlayersProps {
 }
 
 export default function LocalTeamPlayers({ team }: LocalTeamPlayersProps) {
-  const dispatch = useAppDispatch();
-
-  const handleRemovePlayer = (playerId: number) => {
-    dispatch(removePlayerFromTeam({ teamId: team.id, playerId }));
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between mt-6 border-t pt-6">
@@ -51,33 +43,6 @@ export default function LocalTeamPlayers({ team }: LocalTeamPlayersProps) {
                 onAddToTeam={() => {}}
                 onRemoveFromTeam={() => {}}
               />
-              {/* <div className="flex justify-between items-start mb-2">
-                <div>
-                  <h3 className="font-semibold text-gray-900">
-                    {player.first_name} {player.last_name}
-                  </h3>
-                  <p className="text-sm text-gray-600 capitalize">
-                    Position: {player.position || "N/A"}
-                  </p>
-                </div>
-                <button
-                  onClick={() => handleRemovePlayer(player.id as number)}
-                  className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded"
-                  title="Remove from team"
-                >
-                  <Minus className="h-4 w-4" />
-                </button>
-              </div>
-
-              <div className="text-xs text-gray-500 mt-2">
-                <p>
-                  {"isCustom" in player
-                    ? `National Team: ${player.national_team}`
-                    : `Original Team: ${
-                        (player as Player).team?.name || "N/A"
-                      }`}
-                </p>
-              </div> */}
             </div>
           ))}
         </div>

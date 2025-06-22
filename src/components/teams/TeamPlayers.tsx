@@ -2,9 +2,9 @@
 
 import { useEffect, useRef, useCallback, useState, useMemo } from "react";
 import { useAppDispatch, useAppSelector } from "@/lib/hooks";
-import { fetchTeamPlayers, Player } from "@/lib/slices/teamsSlice";
+import { fetchTeamPlayers, Player, APITeam } from "@/lib/slices/teamsSlice";
 import PlayerCard from "../players/PlayerCard";
-import { Loader2, Users, ArrowLeft } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 interface TeamPlayersProps {
   teamId: number;
@@ -12,23 +12,19 @@ interface TeamPlayersProps {
   onBack: () => void;
 }
 
-export default function TeamPlayers({
-  teamId,
-  teamName,
-  onBack,
-}: TeamPlayersProps) {
+export default function TeamPlayers({ teamId }: TeamPlayersProps) {
   const dispatch = useAppDispatch();
   const {
     apiTeams,
     teamPlayersLoading,
     teamPlayersError,
     transferredPlayerIds,
-  } = useAppSelector((state: any) => state.teams);
+  } = useAppSelector((state) => state.teams);
 
   const observer = useRef<IntersectionObserver | null>(null);
   const displayLimit = 10;
 
-  const team = apiTeams.find((t: any) => t.id === teamId);
+  const team = apiTeams.find((t: APITeam) => t.id === teamId);
 
   const allTeamPlayers = useMemo(() => {
     const players = team?.players || [];
@@ -65,7 +61,7 @@ export default function TeamPlayers({
     const newPlayers = allTeamPlayers.slice(start, end);
 
     setDisplayedPlayers((prev) => {
-      const existingIds = new Set(prev.map((p: any) => p.id));
+      const existingIds = new Set(prev.map((p: Player) => p.id));
       const uniqueNew = newPlayers.filter(
         (p: Player) => !existingIds.has(p.id)
       );
@@ -75,10 +71,10 @@ export default function TeamPlayers({
     setHasMore(end < allTeamPlayers.length);
   }, [currentPage, allTeamPlayers]);
 
-  const loadMorePlayers = () => {
+  const loadMorePlayers = useCallback(() => {
     if (!hasMore || teamPlayersLoading[teamId]) return;
     setCurrentPage((prev) => prev + 1);
-  };
+  }, [hasMore, teamPlayersLoading, teamId]);
 
   const lastPlayerRef = useCallback(
     (node: HTMLDivElement | null) => {
@@ -91,7 +87,7 @@ export default function TeamPlayers({
       });
       if (node) observer.current.observe(node);
     },
-    [hasMore, teamPlayersLoading, teamId]
+    [hasMore, teamPlayersLoading, teamId, loadMorePlayers]
   );
 
   const handleRetry = () => {
@@ -101,22 +97,9 @@ export default function TeamPlayers({
     setHasMore(true);
   };
 
-  const renderHeader = () => (
-    <div className="flex items-center space-x-4">
-      <button
-        onClick={onBack}
-        className="flex items-center space-x-2 text-blue-600 hover:text-blue-700"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        <span>Back to Teams</span>
-      </button>
-    </div>
-  );
-
   if (teamPlayersLoading[teamId] && displayedPlayers.length === 0) {
     return (
       <div className="space-y-6">
-        {/* {renderHeader()} */}
         <div className="text-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
           <p className="text-gray-600">Loading team players...</p>
@@ -128,7 +111,6 @@ export default function TeamPlayers({
   if (teamPlayersError[teamId]) {
     return (
       <div className="space-y-6">
-        {/* {renderHeader()} */}
         <div className="text-center py-8">
           <p className="text-red-600">Error: {teamPlayersError[teamId]}</p>
           <button
@@ -144,16 +126,7 @@ export default function TeamPlayers({
 
   return (
     <div className="space-y-6">
-      {/* {renderHeader()} */}
-
       <div className="bg-white rounded-lg p-6">
-        {/* <div className="flex items-center space-x-3 mb-6">
-          <Users className="h-6 w-6 text-blue-600" />
-          <h2 className="text-2xl font-bold text-gray-900">
-            {teamName} - Players
-          </h2>
-        </div> */}
-
         <div className="mb-4 text-sm text-gray-600">
           <p>Total Players: {allTeamPlayers.length}</p>
           <p>

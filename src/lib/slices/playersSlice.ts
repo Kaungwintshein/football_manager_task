@@ -339,26 +339,25 @@ const playersSlice = createSlice({
           return;
         }
 
-        if (action.payload.data) {
-          const { data, totalFetched } = action.payload;
-
-          const uniquePlayers = data.data.filter(
-            (player: Player, index: number, self: Player[]) =>
-              index === self.findIndex((p) => p.id === player.id)
+        if (action.payload.data?.data) {
+          const newPlayers = action.payload.data.data;
+          const existingPlayerIds = new Set(state.allPlayers.map((p) => p.id));
+          const uniqueNewPlayers = newPlayers.filter(
+            (player: Player) => !existingPlayerIds.has(player.id)
           );
 
-          state.allPlayers = uniquePlayers;
-          state.totalPlayersFetched = totalFetched || uniquePlayers.length;
-
-          state.currentPage = 1;
-          const initialEndIndex = Math.min(
-            state.displayLimit,
-            uniquePlayers.length
-          );
-          state.displayedPlayers = uniquePlayers.slice(0, initialEndIndex);
-          state.hasMore = initialEndIndex < uniquePlayers.length;
-
+          state.allPlayers = [...state.allPlayers, ...uniqueNewPlayers];
           state.lastApiFetch = Date.now();
+          state.totalPlayersFetched = action.payload.totalFetched || 0;
+
+          if (state.displayedPlayers.length === 0) {
+            const endIndex = Math.min(
+              state.displayLimit,
+              state.allPlayers.length
+            );
+            state.displayedPlayers = state.allPlayers.slice(0, endIndex);
+            state.hasMore = endIndex < state.allPlayers.length;
+          }
 
           if (typeof window !== "undefined") {
             localStorage.setItem(
@@ -369,13 +368,12 @@ const playersSlice = createSlice({
               "allPlayers",
               JSON.stringify(state.allPlayers)
             );
-            localStorage.setItem("playersCurrentPage", "1");
           }
         }
       })
       .addCase(fetchAllPlayers.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload as string;
+        state.error = (action.payload as string) || "Failed to fetch players";
       });
   },
 });

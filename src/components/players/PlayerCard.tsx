@@ -1,6 +1,6 @@
 "use client";
 
-import { Player } from "@/lib/slices/teamsSlice";
+import { Player, APITeam, LocalTeam, AnyPlayer } from "@/lib/slices/teamsSlice";
 import { useAppSelector } from "@/lib/hooks";
 import { Plus, Minus } from "lucide-react";
 
@@ -17,18 +17,19 @@ export default function PlayerCard({
   onRemoveFromTeam,
   teamId,
 }: PlayerCardProps) {
-  const { apiTeams, localTeams } = useAppSelector((state: any) => state.teams);
+  const { apiTeams, localTeams } = useAppSelector((state) => state.teams);
 
-  const allTeams = [...apiTeams, ...localTeams];
+  const allTeams: (APITeam | LocalTeam)[] = [...apiTeams, ...localTeams];
   const playerTeam = allTeams.find(
     (team) =>
-      "players" in team && team.players.some((p: Player) => p.id === player.id)
+      "players" in team &&
+      team.players?.some((p: AnyPlayer) => p.id === player.id)
   );
 
   const isInCurrentTeam = teamId
     ? allTeams
-        .find((t: any) => t.id === teamId)
-        ?.players.some((p: Player) => p.id === player.id)
+        .find((t: APITeam | LocalTeam) => t.id === teamId)
+        ?.players?.some((p: AnyPlayer) => p.id === player.id)
     : false;
 
   const canAddToTeam = !playerTeam && teamId && typeof teamId === "string";
@@ -90,7 +91,9 @@ export default function PlayerCard({
       <div className="space-y-1">
         <p className="text-sm text-gray-600">
           <span className="font-medium">Team:</span>{" "}
-          {playerTeam?.name || (player as any).team?.name || "Free Agent"}
+          {playerTeam?.name ||
+            (player as Player & { team?: { name: string } }).team?.name ||
+            "Free Agent"}
         </p>
         <p className="text-sm text-gray-600">
           <span className="font-medium">City:</span>{" "}
@@ -102,7 +105,8 @@ export default function PlayerCard({
         </p>
         <p className="text-sm text-gray-600">
           <span className="font-medium">National Team:</span>{" "}
-          {(player as any).national_team || "N/A"}
+          {(player as Player & { national_team?: string }).national_team ||
+            "N/A"}
         </p>
       </div>
 

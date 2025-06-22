@@ -85,7 +85,7 @@ export const fetchTeams = createAsyncThunk(
   async (_, { getState, rejectWithValue }) => {
     try {
       const state = getState() as { teams: TeamsState };
-      const { lastApiFetch, hiddenApiTeams, cacheExpiry } = state.teams;
+      const { lastApiFetch, cacheExpiry } = state.teams;
 
       const now = Date.now();
       if (lastApiFetch && now - lastApiFetch < cacheExpiry) {
@@ -123,7 +123,7 @@ export const fetchTeams = createAsyncThunk(
 
       const data = await response.json();
       return { data, fromCache: false };
-    } catch (error) {
+    } catch {
       return rejectWithValue("Failed to fetch teams");
     }
   }
@@ -172,7 +172,7 @@ export const fetchTeamPlayers = createAsyncThunk(
 
       const data = await response.json();
       return { teamId, data, fromCache: false };
-    } catch (error) {
+    } catch {
       return rejectWithValue("Failed to fetch team players");
     }
   }

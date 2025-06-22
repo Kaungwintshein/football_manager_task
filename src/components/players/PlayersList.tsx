@@ -2,12 +2,12 @@
 
 import { useEffect, useRef, useCallback, useMemo, useState } from "react";
 import { useAppDispatch, useAppSelector } from "@/lib/hooks";
+import { fetchAllPlayers, clearCache } from "@/lib/slices/playersSlice";
 import {
-  fetchAllPlayers,
-  clearCache,
-  loadMorePlayers,
-} from "@/lib/slices/playersSlice";
-import { addPlayerToTeam, removePlayerFromTeam } from "@/lib/slices/teamsSlice";
+  addPlayerToTeam,
+  removePlayerFromTeam,
+  AnyPlayer,
+} from "@/lib/slices/teamsSlice";
 import { Player } from "@/lib/slices/teamsSlice";
 import PlayerCard from "./PlayerCard";
 import { Loader2, RefreshCw, Users, Database } from "lucide-react";
@@ -28,10 +28,9 @@ export default function PlayersList({ teamId }: PlayersListProps) {
     hasMore,
     currentPage,
     displayLimit,
-    totalPlayersFetched,
     lastApiFetch,
-  } = useAppSelector((state: any) => state.players);
-  const { localTeams } = useAppSelector((state: any) => state.teams);
+  } = useAppSelector((state) => state.players);
+  const { localTeams } = useAppSelector((state) => state.teams);
   const observer = useRef<IntersectionObserver | null>(null);
 
   const combinedPlayers = useMemo(() => {
@@ -42,7 +41,7 @@ export default function PlayersList({ teamId }: PlayersListProps) {
     );
   }, [allPlayers, customPlayers]);
 
-  const [currentDisplay, setCurrentDisplay] = useState<any[]>([]);
+  const [currentDisplay, setCurrentDisplay] = useState<AnyPlayer[]>([]);
   const [page, setPage] = useState(1);
 
   useEffect(() => {
@@ -58,7 +57,15 @@ export default function PlayersList({ teamId }: PlayersListProps) {
     const nextPlayers = combinedPlayers.slice(0, nextPage * displayLimit);
     setCurrentDisplay(nextPlayers);
     setPage(nextPage);
-  }, [page, combinedPlayers, displayLimit, loadingMore, currentDisplay.length]);
+  }, [
+    page,
+    combinedPlayers,
+    displayLimit,
+    loadingMore,
+    currentDisplay.length,
+    allPlayers.length,
+    displayedPlayers.length,
+  ]);
 
   const hasMoreToLoad = currentDisplay.length < combinedPlayers.length;
 
@@ -95,11 +102,16 @@ export default function PlayersList({ teamId }: PlayersListProps) {
   const isLocalTeam =
     teamId &&
     typeof teamId === "string" &&
-    localTeams.some((team: any) => team.id === teamId);
+    localTeams.some((team: { id: string | number }) => team.id === teamId);
 
   const filteredPlayers =
     teamId && !isLocalTeam
-      ? currentDisplay.filter((player: any) => player.team?.id === teamId)
+      ? currentDisplay.filter((player: AnyPlayer) => {
+          if ("team" in player) {
+            return player.team?.id === teamId;
+          }
+          return false;
+        })
       : currentDisplay;
 
   useEffect(() => {
@@ -198,72 +210,41 @@ export default function PlayersList({ teamId }: PlayersListProps) {
               <span>Total: {combinedPlayers.length} players available</span>
             </div>
             <div className="flex items-center space-x-2">
-              <span>
-                Showing: {currentDisplay.length} of {combinedPlayers.length}
-              </span>
+              <Users className="h-4 w-4" />
+              <span>Showing: {currentDisplay.length} players</span>
             </div>
-            {teamId && (
-              <div className="flex items-center space-x-2">
-                <span>
-                  {isLocalTeam ? "Available to add" : "Team"}:{" "}
-                  {filteredPlayers.length} players
-                </span>
-              </div>
-            )}
           </div>
         </div>
-        <button
-          onClick={handleRefresh}
-          className="flex items-center space-x-2 px-3 py-2 text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200"
-          title="Refresh player data"
-        >
-          <RefreshCw className="h-4 w-4" />
-          <span>Refresh</span>
-        </button>
+        <div className="flex space-x-2">
+          <button
+            onClick={handleRefresh}
+            disabled={loading}
+            className="flex items-center space-x-2 px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 disabled:opacity-50"
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            <span>Refresh</span>
+          </button>
+        </div>
       </div>
 
       {loading && allPlayers.length === 0 ? (
-        <div className="text-center py-12">
+        <div className="text-center py-8">
           <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
-          <p className="text-gray-600">Loading all players from API...</p>
-          <p className="text-sm text-gray-500 mt-2">
-            This may take a moment as we fetch all available players.
-          </p>
-        </div>
-      ) : loading && allPlayers.length > 0 ? (
-        <div className="text-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
-          <p className="text-gray-600">Refreshing player data...</p>
-        </div>
-      ) : filteredPlayers.length === 0 && !loading ? (
-        <div className="text-center py-12">
-          <p className="text-gray-500 text-lg">
-            {teamId
-              ? isLocalTeam
-                ? "No players available to add to this team."
-                : "No players found for this team."
-              : "No players available."}
-          </p>
-          {teamId && isLocalTeam && (
-            <p className="text-gray-400 text-sm mt-2">
-              Players from the API will appear here once loaded. Click the
-              refresh button if needed.
-            </p>
-          )}
+          <p className="text-gray-600">Loading players...</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredPlayers.map((player: any, index: number) => (
+          {filteredPlayers.map((player: AnyPlayer, index: number) => (
             <div
               key={player.id}
               ref={
-                index === filteredPlayers.length - 1 && hasMoreToLoad
+                index === filteredPlayers.length - 1
                   ? lastPlayerElementRef
-                  : undefined
+                  : null
               }
             >
               <PlayerCard
-                player={player}
+                player={player as Player}
                 onAddToTeam={handleAddToTeam}
                 onRemoveFromTeam={handleRemoveFromTeam}
                 teamId={teamId}
@@ -274,20 +255,31 @@ export default function PlayersList({ teamId }: PlayersListProps) {
       )}
 
       {loadingMore && (
-        <div className="flex justify-center py-8">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+        <div className="text-center py-4">
+          <Loader2 className="h-6 w-6 animate-spin text-blue-600 mx-auto" />
+          <p className="text-gray-600 mt-2">Loading more players...</p>
         </div>
       )}
 
-      {!hasMoreToLoad && filteredPlayers.length > 0 && (
-        <div className="text-center py-4">
-          <p className="text-gray-500">
-            {teamId
-              ? `All ${filteredPlayers.length} team players loaded.`
-              : `All ${currentDisplay.length} players loaded.`}
-          </p>
+      {!loading && !loadingMore && hasMoreToLoad && (
+        <div className="text-center">
+          <button
+            onClick={fetchMore}
+            className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+          >
+            Load More Players
+          </button>
         </div>
       )}
+
+      {!loading &&
+        !loadingMore &&
+        !hasMoreToLoad &&
+        filteredPlayers.length > 0 && (
+          <div className="text-center py-4">
+            <p className="text-gray-500">All players loaded</p>
+          </div>
+        )}
     </div>
   );
 }
